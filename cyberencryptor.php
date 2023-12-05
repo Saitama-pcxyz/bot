@@ -6,18 +6,18 @@ class encrypt {
     private $mm;
     private $yyyy;
     private $cvv;
+    private $capture_context;
 
-    function __construct($cc, $mm, $yyyy, $cvv){
+    function __construct($cc, $mm, $yyyy, $cvv, $capture_context){
         $this->cc = $cc;
         $this->mm = $mm;
         $this->yyyy = $yyyy;
         $this->cvv = $cvv;
-
-        
+        $capture_context->cvv = $capture_context;
     }
 
-    function isType($cc){
-        
+    function isType($cc) : String
+    {
         if (substr($cc, 0, 1) == '5') {
             return "002";
           }
@@ -32,15 +32,20 @@ class encrypt {
           }
     }
 
+    function gen_str($length) {
+      return substr(str_shuffle('abcdefghijklmnopqrstuvwzyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890'), 0, $length);
+  }
+
     function getToken(){
        // // ////////////////////////////////////////////////////////////////////////
-        $joanna = 'joanna'.gen_str(10).'txt';
+        $joanna = 'joanna'. $this->gen_str(20). 'txt';
+        
         $arguments = json_encode([
-        'capture_context' => $capture_context2,
+        'capture_context' => $this->capture_context,
         'cc' => $this->cc,
         'mm' => $this->mm,
         'yyyy' => $this->$yyyy,
-        'type' => $this->$type,
+        'type' => $this->isType($this->cc),
         'joanna' => $this->$joanna,
         ]);
 
@@ -59,7 +64,7 @@ class encrypt {
         $headers[] = 'Origin: https://flex.cybersource.com';
         $headers[] = 'Connection: keep-alive';
         $headers[] = 'Sec-Fetch-Dest: empty';
-        $headers[] = 'Referer: https://flex.cybersource.com/cybersource/assets/microform/0.11.6/iframe.html?keyId='.$kid;
+        $headers[] = 'Referer: https://flex.cybersource.com/cybersource/assets/microform/0.11.6/iframe.html';
         $headers[] = 'Sec-Fetch-Mode: cors';
         $headers[] = 'Sec-Fetch-Site: same-origin';
         $options = array(
@@ -84,3 +89,13 @@ class encrypt {
         curl_close($ch);
     }
 }
+
+$card = extract($_GET);
+$cc = explode("|", $card)[0];
+$month = explode("|", $card)[1];
+$year = explode("|", $card)[2];
+$cvv = explode("|", $card)[3];
+$capture_context = explode("|", $card)[4];
+
+$encrypt = new encrypt($cc, $month, $year, $cvv, $capture_context);
+echo $token = $encrypt->getToken();
